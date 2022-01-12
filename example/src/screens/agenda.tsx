@@ -1,15 +1,12 @@
 import React, {Component} from 'react';
 import {Alert, StyleSheet, Text, View, TouchableOpacity} from 'react-native';
-import {Agenda, DateData, AgendaEntry, AgendaSchedule} from 'react-native-calendars';
+// @ts-expect-error
+import {Agenda} from 'react-native-calendars';
 import testIDs from '../testIDs';
 
-interface State {
-  items?: AgendaSchedule;
-}
-
-export default class AgendaScreen extends Component<State> {
-  state: State = {
-    items: undefined
+export default class AgendaScreen extends Component {
+  state = {
+    items: {}
   };
 
   render() {
@@ -17,11 +14,11 @@ export default class AgendaScreen extends Component<State> {
       <Agenda
         testID={testIDs.agenda.CONTAINER}
         items={this.state.items}
-        loadItemsForMonth={this.loadItems}
+        loadItemsForMonth={this.loadItems.bind(this)}
         selected={'2017-05-16'}
-        renderItem={this.renderItem}
-        renderEmptyDate={this.renderEmptyDate}
-        rowHasChanged={this.rowHasChanged}
+        renderItem={this.renderItem.bind(this)}
+        renderEmptyDate={this.renderEmptyDate.bind(this)}
+        rowHasChanged={this.rowHasChanged.bind(this)}
         showClosingKnob={true}
         // markingType={'period'}
         // markedDates={{
@@ -41,31 +38,25 @@ export default class AgendaScreen extends Component<State> {
     );
   }
 
-  loadItems = (day: DateData) => {
-    const items = this.state.items || {};
-
+  loadItems(day) {
     setTimeout(() => {
       for (let i = -15; i < 85; i++) {
         const time = day.timestamp + i * 24 * 60 * 60 * 1000;
         const strTime = this.timeToString(time);
-
-        if (!items[strTime]) {
-          items[strTime] = [];
-          
+        if (!this.state.items[strTime]) {
+          this.state.items[strTime] = [];
           const numItems = Math.floor(Math.random() * 3 + 1);
           for (let j = 0; j < numItems; j++) {
-            items[strTime].push({
+            this.state.items[strTime].push({
               name: 'Item for ' + strTime + ' #' + j,
-              height: Math.max(50, Math.floor(Math.random() * 150)),
-              day: strTime
+              height: Math.max(50, Math.floor(Math.random() * 150))
             });
           }
         }
       }
-      
-      const newItems: AgendaSchedule = {};
-      Object.keys(items).forEach(key => {
-        newItems[key] = items[key];
+      const newItems = {};
+      Object.keys(this.state.items).forEach(key => {
+        newItems[key] = this.state.items[key];
       });
       this.setState({
         items: newItems
@@ -73,22 +64,19 @@ export default class AgendaScreen extends Component<State> {
     }, 1000);
   }
 
-  renderItem = (reservation: AgendaEntry, isFirst: boolean) => {
-    const fontSize = isFirst ? 16 : 14;
-    const color = isFirst ? 'black' : '#43515c';
-
+  renderItem(item) {
     return (
       <TouchableOpacity
         testID={testIDs.agenda.ITEM}
-        style={[styles.item, {height: reservation.height}]}
-        onPress={() => Alert.alert(reservation.name)}
+        style={[styles.item, {height: item.height}]}
+        onPress={() => Alert.alert(item.name)}
       >
-        <Text style={{fontSize, color}}>{reservation.name}</Text>
+        <Text>{item.name}</Text>
       </TouchableOpacity>
     );
   }
 
-  renderEmptyDate = () => {
+  renderEmptyDate() {
     return (
       <View style={styles.emptyDate}>
         <Text>This is empty date!</Text>
@@ -96,11 +84,11 @@ export default class AgendaScreen extends Component<State> {
     );
   }
 
-  rowHasChanged = (r1: AgendaEntry, r2: AgendaEntry) => {
+  rowHasChanged(r1, r2) {
     return r1.name !== r2.name;
   }
 
-  timeToString(time: number) {
+  timeToString(time) {
     const date = new Date(time);
     return date.toISOString().split('T')[0];
   }

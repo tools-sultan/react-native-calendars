@@ -2,7 +2,7 @@ import XDate from 'xdate';
 import React from 'react';
 import {getTextNodes} from 'react-component-driver';
 import {advanceTo, clear as clearDate} from 'jest-date-mock';
-import {getDaysArray, partial} from '../testUtils';
+import {getDaysArray, partial} from '../../test';
 import {CalendarDriver} from './driver';
 
 describe('Calendar', () => {
@@ -36,13 +36,6 @@ describe('Calendar', () => {
       const expectedDays = getDaysArray(1, 31);
       expectedDays.push(...getDaysArray(1, 4)); // April days
       const drv = new CalendarDriver().withDefaultProps({current: '2020-03-01'}).render();
-      expect(drv.getDays()).toEqual(expectedDays);
-    });
-
-    it('should render month from `initialDate` prop date', () => {
-      const expectedDays = getDaysArray(1, 31);
-      expectedDays.push(...getDaysArray(1, 4)); // April days
-      const drv = new CalendarDriver().withDefaultProps({initialDate: '2020-03-01'}).render();
       expect(drv.getDays()).toEqual(expectedDays);
     });
 

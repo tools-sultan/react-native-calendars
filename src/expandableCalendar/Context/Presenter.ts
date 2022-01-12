@@ -1,9 +1,11 @@
+import invoke from 'lodash/invoke';
 import XDate from 'xdate';
 
 import {sameMonth, isToday} from '../../dateutils';
 import {xdateToData, toMarkingFormat} from '../../interface';
-import {UpdateSources} from '../commons';
 import {CalendarContextProviderProps} from './Provider';
+import {UpdateSource} from '../../types';
+
 
 const commons = require('../commons');
 const TOP_POSITION = 65;
@@ -45,31 +47,20 @@ class Presenter {
     return icon;
   };
 
-  setDate = (
-    props: CalendarContextProviderProps,
-    date: string,
-    newDate: string,
-    updateState: (buttonIcon: number) => void,
-    updateSource: UpdateSources
-  ) => {
+  setDate = (props: CalendarContextProviderProps, date: string, newDate: string, updateState: (buttonIcon: number) => void, updateSource: UpdateSource) => {
     const isSameMonth = sameMonth(new XDate(date), new XDate(newDate));
     const buttonIcon = this.getButtonIcon(date, props.showTodayButton);
 
     updateState(buttonIcon);
 
-    props.onDateChanged?.(date, updateSource);
+    invoke(props, 'onDateChanged', date, updateSource);
 
     if (!isSameMonth) {
-      props.onMonthChange?.(xdateToData(new XDate(date)), updateSource);
+      invoke(props, 'onMonthChange', xdateToData(new XDate(date)), updateSource);
     }
   };
 
-  setDisabled = (
-    showTodayButton: boolean,
-    newDisabledValue: boolean,
-    oldDisabledValue: boolean,
-    updateState: (disabled: boolean) => void
-  ) => {
+  setDisabled = (showTodayButton: boolean, newDisabledValue: boolean, oldDisabledValue: boolean, updateState: (disabled: boolean) => void) => {
     if (!showTodayButton || newDisabledValue === oldDisabledValue) {
       return;
     }

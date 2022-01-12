@@ -7,7 +7,7 @@ import React, {Component} from 'react';
 import {FlatList, View, Text, NativeSyntheticEvent, NativeScrollEvent} from 'react-native';
 
 import {extractComponentProps} from '../../componentUpdater';
-import {weekDayNames, sameWeek} from '../../dateutils';
+import {weekDayNames} from '../../dateutils';
 import {toMarkingFormat} from '../../interface';
 import {DateData} from '../../types';
 import styleConstructor from '../style';
@@ -21,13 +21,14 @@ const commons = require('../commons');
 const NUMBER_OF_PAGES = 2; // must be a positive number
 const applyAndroidRtlFix = commons.isAndroid && commons.isRTL;
 
-export interface WeekCalendarProps extends CalendarListProps {
+interface Props extends CalendarListProps {
   /** whether to have shadow/elevation for the calendar */
   allowShadow?: boolean;
   /** whether to hide the names of the week days */
   hideDayNames?: boolean;
   context?: any;
 }
+export type WeekCalendarProps = Props;
 
 interface State {
   items: string[];
@@ -38,7 +39,7 @@ interface State {
  * @note: Should be wrapped with 'CalendarProvider'
  * @example: https://github.com/wix/react-native-calendars/blob/master/example/src/screens/expandableCalendar.js
  */
-class WeekCalendar extends Component<WeekCalendarProps, State> {
+class WeekCalendar extends Component<Props, State> {
   static displayName = 'WeekCalendar';
 
   static propTypes = {
@@ -66,7 +67,7 @@ class WeekCalendar extends Component<WeekCalendarProps, State> {
     items: this.presenter.getDatesArray(this.props)
   };
 
-  componentDidUpdate(prevProps: WeekCalendarProps) {
+  componentDidUpdate(prevProps: Props) {
     const {context} = this.props;
     const {shouldComponentUpdate, getDatesArray, scrollToIndex} = this.presenter;
 
@@ -144,7 +145,7 @@ class WeekCalendar extends Component<WeekCalendarProps, State> {
     const {style, onDayPress, markedDates, firstDay, ...others} = extractComponentProps(Week, this.props);
     const {context} = this.props;
 
-    const isSameWeek = sameWeek(item, context.date, firstDay);
+    const isSameWeek = this.presenter.isSameWeek(item, context.date, firstDay);
     const currentContext = isSameWeek ? context : undefined;
 
     return (
@@ -172,7 +173,7 @@ class WeekCalendar extends Component<WeekCalendarProps, State> {
   keyExtractor = (_: string, index: number) => index.toString();
 
   renderWeekDaysNames = memoize(weekDaysNames => {
-    return weekDaysNames.map((day: string, index: number) => (
+    return weekDaysNames.map((day: Date, index: number) => (
       <Text
         allowFontScaling={false}
         key={index}
@@ -229,4 +230,4 @@ class WeekCalendar extends Component<WeekCalendarProps, State> {
   }
 }
 
-export default asCalendarConsumer<WeekCalendarProps>(WeekCalendar);
+export default asCalendarConsumer(WeekCalendar);

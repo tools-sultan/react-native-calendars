@@ -3,7 +3,7 @@ import {Platform, StyleSheet} from 'react-native';
 import {Theme} from '../types';
 
 // const eventPaddingLeft = 4
-export const HOURS_SIDEBAR_WIDTH = 72;
+const leftMargin = 50 - 1;
 
 export default function styleConstructor(theme: Theme = {}, calendarHeight: number) {
   return StyleSheet.create({
@@ -86,49 +86,24 @@ export default function styleConstructor(theme: Theme = {}, calendarHeight: numb
     line: {
       height: 1,
       position: 'absolute',
-      left: HOURS_SIDEBAR_WIDTH - 16,
+      left: leftMargin,
       backgroundColor: 'rgb(216,216,216)',
       ...theme.line
     },
-    verticalLine: {
-      position: 'absolute',
-      width: 1,
-      height: '105%',
-      backgroundColor: 'rgb(216,216,216)',
-      left: HOURS_SIDEBAR_WIDTH
-    },
-    nowIndicator: {
-      position: 'absolute',
-      left: HOURS_SIDEBAR_WIDTH,
-      right: 0,
-    },
-    nowIndicatorLine: {
+    lineNow: {
       height: 1,
       position: 'absolute',
-      left: 0,
-      right: 0,
+      left: leftMargin,
       backgroundColor: 'red',
-      ...theme.nowIndicatorLine
-    },
-    nowIndicatorKnob: {
-      position: 'absolute',
-      left: -3,
-      top: -3,
-      width: 7,
-      height: 7,
-      borderRadius: 4,
-      backgroundColor: 'red',
-      ...theme.nowIndicatorKnob
+      ...theme.lineNow
     },
     timeLabel: {
       position: 'absolute',
+      left: 15,
       color: 'rgb(170,170,170)',
       fontSize: 10,
       fontFamily: Platform.OS === 'ios' ? 'Helvetica Neue' : 'Roboto',
       fontWeight: '500',
-      paddingLeft: 12,
-      textAlign: 'center',
-      width: HOURS_SIDEBAR_WIDTH - 16,
       ...theme.timeLabel
     }
   });

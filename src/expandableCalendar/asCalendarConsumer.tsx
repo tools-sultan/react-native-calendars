@@ -4,7 +4,7 @@ import hoistNonReactStatic from 'hoist-non-react-statics';
 import CalendarContext from './Context';
 
 
-function asCalendarConsumer<PROPS>(WrappedComponent: React.ComponentType<any>): React.ComponentClass<PROPS> {
+function asCalendarConsumer(WrappedComponent: React.ComponentType<any>): React.ComponentClass {
 
   class CalendarConsumer extends Component {
     contentRef: any;
@@ -24,7 +24,7 @@ function asCalendarConsumer<PROPS>(WrappedComponent: React.ComponentType<any>): 
 
   hoistNonReactStatic(CalendarConsumer, WrappedComponent);
 
-  return CalendarConsumer as any;
+  return CalendarConsumer;
 }
 
 export default asCalendarConsumer;

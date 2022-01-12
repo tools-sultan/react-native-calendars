@@ -5,21 +5,23 @@ import React, {Component} from 'react';
 import {StyleSheet, Animated, TouchableOpacity, View, StyleProp, ViewStyle} from 'react-native';
 
 import {toMarkingFormat} from '../../interface';
-import {Theme, DateData} from '../../types';
+import {Theme, UpdateSource, DateData} from '../../types';
 import styleConstructor from '../style';
 import CalendarContext from '.';
 import Presenter from './Presenter';
-import {UpdateSources} from '../commons';
 
+
+const commons = require('../commons');
+const updateSources = commons.UpdateSources;
 const TOP_POSITION = 65;
 
 interface Props {
   /** Initial date in 'yyyy-MM-dd' format. Default = now */
-  date: string;
+  date: XDate;
   /** Callback for date change event */
-  onDateChanged?: (date: string, updateSource: UpdateSources) => void;
+  onDateChanged?: () => XDate;
   /** Callback for month change event */
-  onMonthChange?: (date: DateData, updateSource: UpdateSources) => void;
+  onMonthChange?: () => DateData;
   /** Whether to show the today button */
   showTodayButton?: boolean;
   /** Today button's top position */
@@ -60,10 +62,11 @@ class CalendarProvider extends Component<Props> {
   style = styleConstructor(this.props.theme);
   presenter = new Presenter();
 
+  
   state = {
     prevDate: this.getDate(this.props.date),
     date: this.getDate(this.props.date),
-    updateSource: UpdateSources.CALENDAR_INIT,
+    updateSource: updateSources.CALENDAR_INIT,
     buttonY: new Animated.Value(this.props.todayBottomMargin ? -this.props.todayBottomMargin : -TOP_POSITION),
     buttonIcon: this.presenter.getButtonIcon(this.getDate(this.props.date), this.props.showTodayButton),
     disabled: false,
@@ -72,12 +75,12 @@ class CalendarProvider extends Component<Props> {
 
   componentDidUpdate(prevProps: Props) {
     if (this.props.date && prevProps.date !== this.props.date) {
-      this.setDate(this.props.date, UpdateSources.PROP_UPDATE);
+      this.setDate(toMarkingFormat(this.props.date), updateSources.PROP_UPDATE);
     }
   }
 
-  getDate(date: string) {
-    return date || toMarkingFormat(new XDate());
+  getDate(date: XDate) {
+    return toMarkingFormat(date || new XDate());
   }
 
   getProviderContextValue = () => {
@@ -90,7 +93,7 @@ class CalendarProvider extends Component<Props> {
     };
   };
 
-  setDate = (date: string, updateSource: UpdateSources) => {
+  setDate = (date: string, updateSource: UpdateSource) => {
     const {setDate} = this.presenter;
 
     const updateState = (buttonIcon: number) => {
@@ -140,7 +143,7 @@ class CalendarProvider extends Component<Props> {
 
   onTodayPress = () => {
     const today = this.presenter.getTodayDate();
-    this.setDate(today, UpdateSources.TODAY_PRESS);
+    this.setDate(today, updateSources.TODAY_PRESS);
   };
 
   renderTodayButton() {

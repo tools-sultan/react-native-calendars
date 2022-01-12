@@ -1,3 +1,4 @@
+import invoke from 'lodash/invoke';
 import PropTypes from 'prop-types';
 import XDate from 'xdate';
 import memoize from 'memoize-one';
@@ -19,11 +20,9 @@ import {parseDate, xdateToData, toMarkingFormat} from '../interface';
 import {weekDayNames, sameDate, sameMonth} from '../dateutils';
 // @ts-expect-error
 import {AGENDA_CALENDAR_KNOB} from '../testIDs';
-import {VelocityTracker} from '../velocityTracker';
+import {VelocityTracker} from '../input';
 import {DateData} from '../types';
-import {getCalendarDateString} from '../services';
 import styleConstructor from './style';
-import {AgendaSchedule} from '../types';
 import CalendarList, {CalendarListProps} from '../calendar-list';
 import ReservationList, {ReservationListProps}  from './reservation-list';
 
@@ -31,28 +30,40 @@ import ReservationList, {ReservationListProps}  from './reservation-list';
 const HEADER_HEIGHT = 104;
 const KNOB_HEIGHT = 24;
 
+export type ReservationItemType = {
+  name: string;
+  height: number;
+  day: XDate;
+};
+
+export type ReservationsType = {
+  [date: string]: ReservationItemType[];
+};
+
 export type AgendaProps = CalendarListProps & ReservationListProps & {
   /** the list of items that have to be displayed in agenda. If you want to render item as empty date
    the value of date key has to be an empty array []. If there exists no value for date key it is
    considered that the date in question is not yet loaded */
-  items?: AgendaSchedule;
+  items: ReservationsType;
   /** callback that gets called when items for a certain month should be loaded (month became visible) */
-  loadItemsForMonth?: (data: DateData) => void;
+  loadItemsForMonth?: (data: any) => DateData;
   /** callback that fires when the calendar is opened or closed */
   onCalendarToggled?: (enabled: boolean) => void;
+  /** callback that gets called on day press */
+  onDayPress?: (data: DateData) => void;
   /** callback that gets called when day changes while scrolling agenda list */
-  onDayChange?: (data: DateData) => void;
+  onDayChange?: (data: any) => void;
   /** specify how agenda knob should look like */
   renderKnob?: () => JSX.Element;
   /** initially selected day */
-  selected?: string; //TODO: Should be renamed 'selectedDay'
+  selected: boolean; //TODO: Should be renamed 'selectedDay'
   /** Hide knob button. Default = false */
-  hideKnob?: boolean;
+  hideKnob: boolean;
   /** When `true` and `hideKnob` prop is `false`, the knob will always be visible and the user will be able to drag the knob up and close the calendar. Default = false */
-  showClosingKnob?: boolean;
+  showClosingKnob: boolean;
 }
 
-type State = {
+type AgendaState = {
   scrollY: Animated.Value;
   calendarIsReady: boolean;
   calendarScrollable: boolean;
@@ -68,7 +79,7 @@ type State = {
  * @example: https://github.com/wix/react-native-calendars/blob/master/example/src/screens/agenda.js
  * @gif: https://github.com/wix/react-native-calendars/blob/master/demo/agenda.gif
  */
-export default class Agenda extends Component<AgendaProps, State> {
+export default class Agenda extends Component<AgendaProps, AgendaState> {
   static displayName = 'Agenda';
 
   static propTypes = {
@@ -84,6 +95,8 @@ export default class Agenda extends Component<AgendaProps, State> {
     loadItemsForMonth: PropTypes.func,
     /** callback that fires when the calendar is opened or closed */
     onCalendarToggled: PropTypes.func,
+    /** callback that gets called on day press */
+    onDayPress: PropTypes.func,
     /** callback that gets called when day changes while scrolling agenda list */
     onDayChange: PropTypes.func,
     /** specify how agenda knob should look like */
@@ -99,14 +112,14 @@ export default class Agenda extends Component<AgendaProps, State> {
   private style: {[key: string]: ViewStyle};
   private viewHeight: number;
   private viewWidth: number;
-  private scrollTimeout?: ReturnType<typeof setTimeout>;
+  private scrollTimeout: any;
   private headerState: string;
   private currentMonth: XDate;
-  private knobTracker: VelocityTracker;
+  private knobTracker: any;
   private _isMounted: boolean | undefined;
   private scrollPad: React.RefObject<any> = React.createRef();
   private calendar: React.RefObject<CalendarList> = React.createRef();
-  private knob: React.RefObject<View> = React.createRef();
+  private knob: React.RefObject<any> = React.createRef();
   public list: React.RefObject<ReservationList> = React.createRef();
 
   constructor(props: AgendaProps) {
@@ -158,6 +171,7 @@ export default class Agenda extends Component<AgendaProps, State> {
     if (nextProps.items) {
       return {firstReservationLoad: false};
     }
+
     return null;
   }
 
@@ -185,9 +199,11 @@ export default class Agenda extends Component<AgendaProps, State> {
   };
 
   enableCalendarScrolling(enable = true) {
-    this.setState({calendarScrollable: enable});
-    
-    this.props.onCalendarToggled?.(enable);
+    this.setState({
+      calendarScrollable: enable
+    });
+
+    invoke(this.props, 'onCalendarToggled', enable);
 
     // Enlarge calendarOffset here as a workaround on iOS to force repaint.
     // Otherwise the month after current one or before current one remains invisible.
@@ -202,19 +218,22 @@ export default class Agenda extends Component<AgendaProps, State> {
 
   loadReservations(props: AgendaProps) {
     if ((!props.items || !Object.keys(props.items).length) && !this.state.firstReservationLoad) {
-      this.setState({firstReservationLoad: true},
+      this.setState(
+        {
+          firstReservationLoad: true
+        },
         () => {
-          this.props.loadItemsForMonth?.(xdateToData(this.state.selectedDay));
+          invoke(this.props, 'loadItemsForMonth', xdateToData(this.state.selectedDay));
         }
       );
     }
   }
 
-  onDayPress = (d: DateData) => {
+  chooseDayFromCalendar = (d: any) => {
     this.chooseDay(d, !this.state.calendarScrollable);
   };
 
-  chooseDay(d: DateData, optimisticScroll: boolean) {
+  chooseDay(d: any, optimisticScroll: boolean) {
     const day = parseDate(d);
 
     this.setState({
@@ -222,29 +241,29 @@ export default class Agenda extends Component<AgendaProps, State> {
       selectedDay: day.clone()
     });
 
-    this.props.onCalendarToggled?.(false);
+    invoke(this.props, 'onCalendarToggled', false);
 
     if (!optimisticScroll) {
-      this.setState({topDay: day.clone()});
+      this.setState({
+        topDay: day.clone()
+      });
     }
 
     this.setScrollPadPosition(this.initialScrollPadPosition(), true);
     this.calendar?.current?.scrollToDay(day, this.calendarOffset(), true);
 
-    this.props.loadItemsForMonth?.(xdateToData(day));
-    this.props.onDayPress?.(xdateToData(day));
+    invoke(this.props, 'loadItemsForMonth', xdateToData(day));
+    invoke(this.props, 'onDayPress', xdateToData(day));
   }
 
-  generateMarkings = memoize((selectedDay, markedDates, items) => {
+  generateMarkings = memoize((selectedDay, markedDates, items = {}) => {
     if (!markedDates) {
       markedDates = {};
-      if (items) {
-        Object.keys(items).forEach(key => {
-          if (items[key] && items[key].length) {
-            markedDates[key] = {marked: true};
-          }
-        });
-      }
+      Object.keys(items).forEach(key => {
+        if (items[key] && items[key].length) {
+          markedDates[key] = {marked: true};
+        }
+      });
     }
 
     const key = toMarkingFormat(selectedDay);
@@ -305,28 +324,29 @@ export default class Agenda extends Component<AgendaProps, State> {
   };
 
   onVisibleMonthsChange = (months: DateData[]) => {
-    this.props.onVisibleMonthsChange?.(months);
+    invoke(this.props, 'onVisibleMonthsChange', months);
 
     if (this.props.items && !this.state.firstReservationLoad) {
-      if (this.scrollTimeout) {
-        clearTimeout(this.scrollTimeout);
-      }
+      clearTimeout(this.scrollTimeout);
 
       this.scrollTimeout = setTimeout(() => {
         if (this._isMounted) {
-          this.props.loadItemsForMonth?.(months[0]);
+          invoke(this.props, 'loadItemsForMonth', months[0]);
         }
       }, 200);
     }
   };
 
-  onDayChange = (day: XDate) => {
-    const withAnimation = sameMonth(day, this.state.selectedDay);
-    this.calendar?.current?.scrollToDay(day, this.calendarOffset(), withAnimation);
-    
-    this.setState({selectedDay: day});
+  onDayChange = (day: any) => {
+    const newDate = parseDate(day);
+    const withAnimation = sameMonth(newDate, this.state.selectedDay);
 
-    this.props.onDayChange?.(xdateToData(day));
+    this.calendar?.current?.scrollToDay(day, this.calendarOffset(), withAnimation);
+    this.setState({
+      selectedDay: newDate
+    });
+
+    invoke(this.props, 'onDayChange', xdateToData(newDate));
   };
 
   renderReservations() {
@@ -336,6 +356,7 @@ export default class Agenda extends Component<AgendaProps, State> {
       <ReservationList
         {...reservationListProps}
         ref={this.list}
+        reservations={this.props.items}
         selectedDay={this.state.selectedDay}
         topDay={this.state.topDay}
         onDayChange={this.onDayChange}
@@ -352,13 +373,13 @@ export default class Agenda extends Component<AgendaProps, State> {
       <CalendarList
         {...calendarListProps}
         ref={this.calendar}
-        current={getCalendarDateString(this.currentMonth.toString())}
+        current={this.currentMonth}
         markedDates={this.generateMarkings(this.state.selectedDay, markedDates, items)}
         calendarWidth={this.viewWidth}
         scrollEnabled={this.state.calendarScrollable}
         hideExtraDays={shouldHideExtraDays}
         onLayout={this.onCalendarListLayout}
-        onDayPress={this.onDayPress}
+        onDayPress={this.chooseDayFromCalendar}
         onVisibleMonthsChange={this.onVisibleMonthsChange}
       />
     );
@@ -381,12 +402,7 @@ export default class Agenda extends Component<AgendaProps, State> {
 
   renderWeekDaysNames = memoize((weekDaysNames: string[]) => {
     return weekDaysNames.map((day, index) => (
-      <Text 
-        key={day + index} 
-        style={this.style.weekday} 
-        allowFontScaling={false} 
-        numberOfLines={1}
-      >
+      <Text allowFontScaling={false} key={day + index} style={this.style.weekday} numberOfLines={1}>
         {day}
       </Text>
     ));
@@ -451,6 +467,7 @@ export default class Agenda extends Component<AgendaProps, State> {
     const scrollPadStyle = {
       height: KNOB_HEIGHT,
       top: scrollPadPosition,
+      left: (this.viewWidth - 80) / 2
     };
 
     return (

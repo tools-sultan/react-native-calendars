@@ -1,10 +1,11 @@
+import invoke from 'lodash/invoke';
 import values from 'lodash/values';
 import PropTypes from 'prop-types';
 
 import React, {Component, Fragment} from 'react';
 import {TouchableOpacity, Text, View} from 'react-native';
 
-import {Theme, DayState, MarkingTypes, DateData} from '../../../types';
+import {Theme, DateData, DayState, MarkingTypes} from '../../../types';
 import {shouldUpdate} from '../../../componentUpdater';
 import styleConstructor from './style';
 import Marking, {MarkingProps} from '../marking';
@@ -18,11 +19,11 @@ export interface BasicDayProps {
   /** Theme object */
   theme?: Theme;
   /** onPress callback */
-  onPress?: (date?: DateData) => void;
+  onPress?: (date: DateData) => void;
   /** onLongPress callback */
-  onLongPress?: (date?: DateData) => void;
+  onLongPress?: (date: Date) => void;
   /** The date to return from press callbacks */
-  date?: DateData;
+  date?: Date;
   /** Disable all touch events for disabled days. can be override with disableTouchEvent in markedDates*/
   disableAllTouchEventsForDisabledDays?: boolean;
   /** Disable all touch events for inactive days. can be override with disableTouchEvent in markedDates*/
@@ -34,7 +35,7 @@ export interface BasicDayProps {
 }
 
 export default class BasicDay extends Component<BasicDayProps> {
-  static displayName = 'BasicDay';
+  static displayName = 'IGNORE';
 
   static propTypes = {
     state: PropTypes.oneOf(['selected', 'disabled', 'inactive', 'today', '']),
@@ -72,11 +73,11 @@ export default class BasicDay extends Component<BasicDayProps> {
   }
 
   onPress = () => {
-    this.props.onPress?.(this.props.date);
+    invoke(this.props, 'onPress', this.props.date);
   };
 
   onLongPress = () => {
-    this.props.onLongPress?.(this.props.date);
+    invoke(this.props, 'onLongPress', this.props.date);
   };
 
   get marking() {

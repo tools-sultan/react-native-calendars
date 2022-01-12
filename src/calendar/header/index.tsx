@@ -29,7 +29,7 @@ import {
 import styleConstructor from './style';
 import {Theme, Direction} from '../../types';
 
-export interface CalendarHeaderProps {
+interface Props {
   theme?: Theme;
   firstDay?: number;
   displayLoadingIndicator?: boolean;
@@ -54,10 +54,8 @@ export interface CalendarHeaderProps {
   disableArrowRight?: boolean;
   /** Apply custom disable color to selected day indexes */
   disabledDaysIndexes?: number[];
-  /** Replace default title with custom one. the function receive a date as parameter */
+  /** Replace default month and year title with custom one. the function receive a date as parameter */
   renderHeader?: (date?: XDate) => ReactNode;
-  /** Replace default title with custom element */
-  customHeaderTitle?: JSX.Element;
   /** Provide aria-level for calendar heading for proper accessibility when used with web (react-native-web) */
   webAriaLevel?: number;
   testID?: string;
@@ -65,9 +63,10 @@ export interface CalendarHeaderProps {
   accessibilityElementsHidden?: boolean;
   importantForAccessibility?: 'auto' | 'yes' | 'no' | 'no-hide-descendants';
 }
+export type CalendarHeaderProps = Props;
 
-class CalendarHeader extends Component<CalendarHeaderProps> {
-  static displayName = 'CalendarHeader';
+class CalendarHeader extends Component<Props> {
+  static displayName = 'IGNORE';
 
   static propTypes = {
     theme: PropTypes.object,
@@ -94,10 +93,8 @@ class CalendarHeader extends Component<CalendarHeaderProps> {
     disableArrowRight: PropTypes.bool,
     /** Apply custom disable color to selected day indexes */
     disabledDaysIndexes: PropTypes.arrayOf(PropTypes.number),
-    /** Replace default title with custom one. the function receive a date as parameter */
+    /** Replace default month and year title with custom one. the function receive a date as parameter. */
     renderHeader: PropTypes.any,
-    /** Replace default title with custom element */
-    customHeaderTitle: PropTypes.any,
     /** Provide aria-level for calendar heading for proper accessibility when used with web (react-native-web) */
     webAriaLevel: PropTypes.number
   };
@@ -108,13 +105,13 @@ class CalendarHeader extends Component<CalendarHeaderProps> {
   };
   style: any;
 
-  constructor(props: CalendarHeaderProps) {
+  constructor(props: Props) {
     super(props);
 
     this.style = styleConstructor(props.theme);
   }
 
-  shouldComponentUpdate(nextProps: CalendarHeaderProps) {
+  shouldComponentUpdate(nextProps: Props) {
     if (nextProps.month?.toString('yyyy MM') !== this.props.month?.toString('yyyy MM')) {
       return true;
     }
@@ -127,8 +124,7 @@ class CalendarHeader extends Component<CalendarHeaderProps> {
       'renderArrow',
       'disableArrowLeft',
       'disableArrowRight',
-      'renderHeader',
-      'customHeaderTitle'
+      'renderHeader'
     ]);
   }
 
@@ -185,15 +181,11 @@ class CalendarHeader extends Component<CalendarHeaderProps> {
   });
 
   renderHeader = () => {
-    const {customHeaderTitle, renderHeader, month, monthFormat, testID, webAriaLevel} = this.props;
+    const {renderHeader, month, monthFormat, testID, webAriaLevel} = this.props;
     const webProps = Platform.OS === 'web' ? {'aria-level': webAriaLevel} : {};
 
     if (renderHeader) {
       return renderHeader(month);
-    }
-
-    if (customHeaderTitle) {
-      return customHeaderTitle;
     }
 
     return (

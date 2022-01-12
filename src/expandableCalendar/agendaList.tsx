@@ -1,6 +1,7 @@
 import get from 'lodash/get';
 import map from 'lodash/map';
 import omit from 'lodash/omit';
+import invoke from 'lodash/invoke';
 import isFunction from 'lodash/isFunction';
 import isUndefined from 'lodash/isUndefined';
 import PropTypes from 'prop-types';
@@ -30,7 +31,7 @@ import asCalendarConsumer from './asCalendarConsumer';
 const commons = require('./commons');
 const updateSources = commons.UpdateSources;
 
-export interface AgendaListProps extends SectionListProps<any, DefaultSectionT> {
+interface Props extends SectionListProps<any, DefaultSectionT> {
   /** day format in section title. Formatting values: http://arshaw.com/xdate/#Formatting */
   dayFormat?: string;
   /** a function to custom format the section header's title */
@@ -51,6 +52,7 @@ export interface AgendaListProps extends SectionListProps<any, DefaultSectionT> 
   theme?: Theme;
   context?: any;
 }
+export type AgendaListProps = Props;
 
 /**
  * @description: AgendaList component
@@ -58,7 +60,7 @@ export interface AgendaListProps extends SectionListProps<any, DefaultSectionT> 
  * @extends: SectionList
  * @example: https://github.com/wix/react-native-calendars/blob/master/example/src/screens/expandableCalendar.js
  */
-class AgendaList extends Component<AgendaListProps> {
+class AgendaList extends Component<Props> {
   static displayName = 'AgendaList';
 
   static propTypes = {
@@ -103,7 +105,7 @@ class AgendaList extends Component<AgendaListProps> {
     }
   }
 
-  componentDidUpdate(prevProps: AgendaListProps) {
+  componentDidUpdate(prevProps: Props) {
     const {updateSource, date} = this.props.context;
     if (date !== prevProps.context.date) {
       // NOTE: on first init data should set first section to the current date!!!
@@ -113,7 +115,7 @@ class AgendaList extends Component<AgendaListProps> {
     }
   }
 
-  getSectionIndex(date: string) {
+  getSectionIndex(date: Date) {
     let i;
     map(this.props.sections, (section, index) => {
       // NOTE: sections titles should match current date format!!!
@@ -125,7 +127,7 @@ class AgendaList extends Component<AgendaListProps> {
     return i;
   }
 
-  getNextSectionIndex(date: string) {
+  getNextSectionIndex(date: Date) {
     let i = 0;
     const {sections} = this.props;
     for (let j = 1; j < sections.length; j++) {
@@ -197,7 +199,7 @@ class AgendaList extends Component<AgendaListProps> {
         this._topSection = topSection;
         if (this.didScroll && !this.props.avoidDateUpdates) {
           // to avoid setDate() on first load (while setting the initial context.date value)
-          this.props.context.setDate?.(this._topSection, updateSources.LIST_DRAG);
+          invoke(this.props.context, 'setDate', this._topSection, updateSources.LIST_DRAG);
         }
       }
     }
@@ -207,19 +209,19 @@ class AgendaList extends Component<AgendaListProps> {
     if (!this.didScroll) {
       this.didScroll = true;
     }
-    this.props.onScroll?.(event);
+    invoke(this.props, 'onScroll', event);
   };
 
   onMomentumScrollBegin = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
-    this.props.context.setDisabled?.(true);
-    this.props.onMomentumScrollBegin?.(event);
+    invoke(this.props.context, 'setDisabled', true);
+    invoke(this.props, 'onMomentumScrollBegin', event);
   };
 
   onMomentumScrollEnd = (event: NativeSyntheticEvent<NativeScrollEvent>) => {
     // when list momentum ends AND when scrollToSection scroll ends
     this.sectionScroll = false;
-    this.props.context.setDisabled?.(false);
-    this.props.onMomentumScrollEnd?.(event);
+    invoke(this.props.context, 'setDisabled', false);
+    invoke(this.props, 'onMomentumScrollEnd', event);
   };
 
   onScrollToIndexFailed = (info: {index: number; highestMeasuredFrameIndex: number; averageItemLength: number}) => {
@@ -280,4 +282,4 @@ class AgendaList extends Component<AgendaListProps> {
   // }
 }
 
-export default asCalendarConsumer<AgendaListProps>(AgendaList);
+export default asCalendarConsumer(AgendaList);

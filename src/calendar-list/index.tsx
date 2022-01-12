@@ -1,3 +1,4 @@
+import invoke from 'lodash/invoke';
 import PropTypes from 'prop-types';
 import XDate from 'xdate';
 
@@ -21,7 +22,7 @@ const CALENDAR_HEIGHT = 360;
 const PAST_SCROLL_RANGE = 50;
 const FUTURE_SCROLL_RANGE = 50;
 
-export interface CalendarListProps extends CalendarProps, Omit<FlatListProps<any>, 'data' | 'renderItem'> {
+interface Props extends CalendarProps, Omit<FlatListProps<any>, 'data' | 'renderItem'> {
   /** Max amount of months allowed to scroll to the past. Default = 50 */
   pastScrollRange?: number;
   /** Max amount of months allowed to scroll to the future. Default = 50 */
@@ -57,8 +58,8 @@ export interface CalendarListProps extends CalendarProps, Omit<FlatListProps<any
   /** onLayout event */
   onLayout?: (event: LayoutChangeEvent) => void;
   removeClippedSubviews?: boolean;
-  testID?: string;
 }
+export type CalendarListProps = Props;
 
 type XDateAndBump = XDate & {propBump?: number};
 
@@ -76,7 +77,7 @@ type State = {
  * @example: https://github.com/wix/react-native-calendars/blob/master/example/src/screens/calendarsList.js
  * @gif: https://github.com/wix/react-native-calendars/blob/master/demo/calendar-list.gif
  */
-class CalendarList extends Component<CalendarListProps, State> {
+class CalendarList extends Component<Props, State> {
   static displayName = 'CalendarList';
 
   static propTypes = {
@@ -134,7 +135,7 @@ class CalendarList extends Component<CalendarListProps, State> {
     itemVisiblePercentThreshold: 20
   };
 
-  constructor(props: CalendarListProps) {
+  constructor(props: Props) {
     super(props);
 
     this.style = styleConstructor(props.theme);
@@ -170,7 +171,7 @@ class CalendarList extends Component<CalendarListProps, State> {
     };
   }
 
-  componentDidUpdate(prevProps: CalendarListProps) {
+  componentDidUpdate(prevProps: Props) {
     const prevCurrent = parseDate(prevProps.current);
     const current = parseDate(this.props.current);
 
@@ -179,7 +180,7 @@ class CalendarList extends Component<CalendarListProps, State> {
     }
   }
 
-  static getDerivedStateFromProps(_: CalendarListProps, prevState: State) {
+  static getDerivedStateFromProps(_: Props, prevState: State) {
     const rowClone = prevState.rows;
     const newRows = [];
 
@@ -249,7 +250,7 @@ class CalendarList extends Component<CalendarListProps, State> {
     this.updateMonth(this.state.currentMonth.clone().addMonths(count, true));
   };
 
-  updateMonth(day: XDate) {
+  updateMonth(day: XDate, doNotTriggerListeners = false) {
     if (day.toString('yyyy MM') === this.state.currentMonth.toString('yyyy MM')) {
       return;
     }
@@ -257,9 +258,12 @@ class CalendarList extends Component<CalendarListProps, State> {
     this.setState({currentMonth: day.clone()}, () => {
       this.scrollToMonth(this.state.currentMonth);
 
-      const currMont = this.state.currentMonth.clone();
-      this.props.onMonthChange?.(xdateToData(currMont));
-      this.props.onVisibleMonthsChange?.([xdateToData(currMont)]);
+      if (!doNotTriggerListeners) {
+        const currMont = this.state.currentMonth.clone();
+
+        invoke(this.props, 'onMonthChange', xdateToData(currMont));
+        invoke(this.props, 'onVisibleMonthsChange', [xdateToData(currMont)]);
+      }
     });
   }
 
@@ -294,7 +298,7 @@ class CalendarList extends Component<CalendarListProps, State> {
       }
     }
 
-    this.props.onVisibleMonthsChange?.(visibleMonths);
+    invoke(this.props, 'onVisibleMonthsChange', visibleMonths);
 
     this.setState({
       // @ts-expect-error
