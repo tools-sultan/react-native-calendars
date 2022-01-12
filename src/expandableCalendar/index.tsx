@@ -115,7 +115,8 @@ class ExpandableCalendar extends Component<ExpandableCalendarProps, State> {
     /** a threshold for closing the calendar with the pan gesture */
     closeThreshold: PropTypes.number,
     /** Whether to close the calendar on day press. Default = true */
-    closeOnDayPress: PropTypes.bool
+    closeOnDayPress: PropTypes.bool,
+    sultanEnableScroll:PropTypes.bool,
   };
 
   static defaultProps = {
@@ -596,7 +597,7 @@ class ExpandableCalendar extends Component<ExpandableCalendarProps, State> {
               onDayPress={this.onDayPress}
               onVisibleMonthsChange={this.onVisibleMonthsChange}
               pagingEnabled
-              scrollEnabled={isOpen}
+              scrollEnabled={this.props.sultanEnableScroll}
               hideArrows={this.shouldHideArrows()}
               onPressArrowLeft={this.onPressArrowLeft}
               onPressArrowRight={this.onPressArrowRight}
